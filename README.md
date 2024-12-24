@@ -27,8 +27,11 @@ Download Google's Chinese-to-English translation dataset from [here](https://www
 For quick deployment, you can use the fixed smaller dataset `translation2019zh_valid_fixed.json`.
 
 ### Download Pretrained Weights
-Model | ckpt | train fig| Examples
-Seq2Seq |xxx| fig|Input sentence：xx output sentence： xx
+| Model    | ckpt | train fig | Examples                                 |
+|----------|------|-----------|------------------------------------------|
+| Seq2Seq  | seq2seq_valid_100epoch.pth.tar  | ![Figure 1](figs/seq2seq.png)       | Input sentence: '你知道的，我会永远爱着你。'<br>Output sentence: 'I love you love you.' |
+| AttSeq2Seq  | seq2seqAtt_valid_50epoch.pth.tar  | ![Figure 1](figs/seq2seq.png)       | Input sentence: '你知道的，我会永远爱着你。'<br>Output sentence: 'You know that you will hear the sound of love.' |
+
 
 ## Train
 1. Set configuration parameters in `train.py`:
