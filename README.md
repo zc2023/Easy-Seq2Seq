@@ -91,6 +91,6 @@ This project is based on the following open-source repositories:
 
 - [Chinese2English-Translation-seq2seq](https://github.com/Mountchicken/Chinese2English-Translation-seq2seq) 
 - [pytorch-seq2seq](https://github.com/bentrevett/pytorch-seq2seq/tree/main). 
-
+- [DASOU讲AI](https://www.bilibili.com/video/BV1dR4y1E7aL/?spm_id_from=333.337.search-card.all.click&vd_source=132c74f7a893f6ef64b723d9600c40b7)  
 Special thanks to [ChatGPT](https://chatgpt.com/) for generating parts of the code, which saved considerable time during development.
 
