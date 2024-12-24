@@ -73,29 +73,6 @@ def translate_sentence(model, sentence, chinese_vocab, english_vocab, device, ma
 
         # print("Generated Tokens:", generated_tokens)
         return translated_sentence
-        # # Initialize the output sequence
-        # for _ in range(max_length):
-        #     with torch.no_grad():
-        #         # Feed the input tensor and the decoder input into the transformer
-        #         # The model expects input shape [seq_len, batch_size], so we pass input as (seq_len, 1) and tgt_input as (seq_len, 1)
-        #         output = model(sentence_tensor, tgt_input)  # output shape: [seq_len, batch_size, vocab_size]
-
-        #         # Get the predicted token for the current timestep (pick the token with the highest probability)
-        #         # output shape [seq_len, batch_size, output_vocab_len]
-        #         next_token = output[-1, 0].argmax(dim=-1).item()  # [batch_size] -> scalar
-
-        #         # Add the predicted token to the output sequence
-        #         generated_tokens.append(next_token)
-
-        #         # If the token is <eos> (end of sequence), stop generating
-        #         if next_token == english_vocab.get_stoi()["<eos>"]:
-        #             break
-
-        #         # Append the predicted token to tgt_input for the next step
-        #         tgt_input = torch.cat([tgt_input, torch.LongTensor([[next_token]]).to(device)], dim=0)
-
-        # # Convert token indices back to words
-        # translated_sentence = [english_vocab.get_itos()[token] for token in generated_tokens]
     else:
         print("Not a valid model name!")
     

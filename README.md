@@ -1,14 +1,6 @@
-# Seq2Seq-EasyStartup-Pytorch
+# Easy-Seq2Seq
 This repository provides an easy-to-deploy Seq2Seq model for NLP beginners using the latest (2024) PyTorch version. It includes implementations for both traditional Seq2Seq models and more advanced architectures like Transformer and RNN+Attention for English-Chinese translation.
 
-## Keywords
-To make this repository easy to search, the following keywords are included:
-
-Seq2SeqModel, Translation, NLP, Chinese2English, English2Chinese
-英译中模型, 中译英模型, 英汉互译, 英文翻译中文，中文翻译英文，
-pytorch, en2cn, cn2en, pytorch
-LSTM, 基于RNN的Seq2Seq（无Attention）英汉互译
-基于RNN+Attention的Seq2Seq英汉互译, 基于Transformer的英汉互译
 ## Getting Started
 1. Install Anaconda
 Follow the steps below to install dependencies and set up your environment.
@@ -35,7 +27,8 @@ Download Google's Chinese-to-English translation dataset from [here](https://www
 For quick deployment, you can use the fixed smaller dataset `translation2019zh_valid_fixed.json`.
 
 ### Download Pretrained Weights
-
+Model | ckpt | train fig| Examples
+Seq2Seq |xxx| fig|Input sentence：xx output sentence： xx
 
 ## Train
 1. Set configuration parameters in `train.py`:
