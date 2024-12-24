@@ -31,6 +31,7 @@ For quick deployment, you can use the fixed smaller dataset `translation2019zh_v
 |----------|------|-----------|------------------------------------------|
 | Seq2Seq  | seq2seq_valid_100epoch.pth.tar  | ![Figure 1](figs/seq2seq.png)       | Input sentence: '你知道的，我会永远爱着你。'<br>Output sentence: 'I love you love you.' |
 | AttSeq2Seq  | seq2seqAtt_valid_50epoch.pth.tar  | ![Figure 1](figs/seq2seq.png)       | Input sentence: '你知道的，我会永远爱着你。'<br>Output sentence: 'You know that you will hear the sound of love.' |
+| Transformer  | transformer_valid_100epoch.pth.tar  | ![Figure 1](figs/transformer.png)       | Input sentence: '你知道的，我会永远爱着你。'<br>Output sentence: 'I know you want to take. I see that.' |
 
 
 ## Train

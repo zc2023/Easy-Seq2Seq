@@ -9,11 +9,12 @@ from transformerv2 import Transformer
 def inference(
        english_vocab_path = "vocab30k/english_vocab.pt",
        chinese_vocab_path = "vocab30k/chinese_vocab.pt",
-       model_ckpt_path = "weights/seq2seqAtt_valid_50epoch.pth.tar", 
+       model_ckpt_path = "weights/transformer_valid_100epoch.pth.tar", 
        # seq2seqAtt_valid_100epoch.pth.tar,valid_150epoch.pth.tar
        # seq2seq_train_28epoch.pth.tar
+       # transformer_valid_100epoch.pth.tar
        device = "cuda:0",
-       model_name = "Seq2SeqAttention", # Seq2Seq # Seq2SeqAttention # Transformer
+       model_name = "Transformer", # Seq2Seq # Seq2SeqAttention # Transformer
        # sentence_to_translate = '美国缓慢地开始倾听，但并非没有艰难曲折。',
        sentence_to_translate = '你知道的，我会永远爱着你。',
        # sentence_to_translate = '本文主要由三个部分组成：导生制、见习生制、导生制和见习生制的历史作用。',
