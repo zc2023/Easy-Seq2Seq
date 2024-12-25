@@ -31,8 +31,22 @@ For quick deployment, you can use the fixed smaller dataset `translation2019zh_v
 | Model    | ckpt | train fig | Examples                                 |
 |----------|------|-----------|------------------------------------------|
 | Seq2Seq  | seq2seq_valid_100epoch.pth.tar  | ![Figure 1](figs/seq2seq.png)       | Input sentence: '你知道的，我会永远爱着你。'<br>Output sentence: 'I love you love you.' |
-| AttSeq2Seq  | seq2seqAtt_valid_50epoch.pth.tar  | ![Figure 1](figs/seq2seq.png)       | Input sentence: '你知道的，我会永远爱着你。'<br>Output sentence: 'You know that you will hear the sound of love.' |
-| Transformer  | transformer_valid_100epoch.pth.tar  | ![Figure 1](figs/transformer.png)       | Input sentence: '你知道的，我会永远爱着你。'<br>Output sentence: 'I know you want to take. I see that.' |
+| AttSeq2Seq  | seq2seqAtt_valid_50epoch.pth.tar  | ![Figure 2](figs/seq2seq.png)       | Input sentence: '你知道的，我会永远爱着你。'<br>Output sentence: 'You know that you will hear the sound of love.' |
+| Transformer(valid)  | transformer_valid_100epoch.pth.tar  | ![Figure 3](figs/transformer.png)       | Input sentence: '你知道的，我会永远爱着你。'<br>Output sentence: 'I know you want to take. I see that.' |
+| Transformer(train)  | transformer_train_10epoch.pth.tar<br> The checkpoint is available [here](https://drive.google.com/file/d/17FWZYQHfrbizPT2JZ2Pb8FmpfwcsVjOZ/view?usp=drive_link).  | ![Figure 4](figs/transformer_train.png)       | Input sentence: '你知道的，我会永远爱着你。'<br>Output sentence: 'You know, I 'll always love you.'<br>Input sentence: '美国缓慢地开始倾听，但并非没有艰难曲折。'<br>Output sentence: 'The United States slowly began to listen, but not without difficulty.'<br>**Groundingtruth:**'Slowly and not without struggle, America began to listen.'  |
+
+
+More results on Transformer (trained on `translation2019zh_train` dataset for 10 epochs): 
+```
+input sentence = "你们可能不知道只用20万赢到578万是什么概念，我们一般只会用两个字来形容这种人:赌怪！"
+output sentence = You may not know what the concept of <unk> <unk> is, we usually use two <unk> to describe this person : <unk>!
+
+input sentence = "全民制作人大家好，我是练习时长两年半的个人练习生蔡徐坤。喜欢唱、跳、rap、篮球。"
+output sentence = All the producers are good. I am a two - and - a - half years ' personal <unk>. I like singing, dancing, <unk> and basketball.
+
+input sentence = "电车难题是这样的，被绑在铁轨上的人只顾等死就可以了，控制电车转向的人要考虑的事情就多了。"
+output sentence = The problem is that the people who are strapped on the rail can be killed and the people who control the <unk> will think of more.
+```
 
 
 ## Train
@@ -68,10 +82,8 @@ inference(
        model_ckpt_path = "checkpoint_valid_dataset.pth.tar",
        device = "cuda:0",
        model = "Seq2Seq",
-       # sentence_to_translate = '美国缓慢地开始倾听，但并非没有艰难曲折。',
-       # sentence_to_translate = '你知道的，我会永远爱着你。',
-       sentence_to_translate = '昨天有人去超市买了一瓶啤酒',
-       # sentence_to_translate = '你好',
+       sentence_to_translate = '你知道的，我会永远爱着你。',
+
 )
 ```
 2. Run inference with:

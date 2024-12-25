@@ -16,11 +16,12 @@ def inference(
        device = "cuda:0",
        model_name = "Transformer", # Seq2Seq # Seq2SeqAttention # Transformer
        # sentence_to_translate = '美国缓慢地开始倾听，但并非没有艰难曲折。',
-       sentence_to_translate = '你知道的，我会永远爱着你。',
+       # sentence_to_translate = '你知道的，我会永远爱着你。',
        # sentence_to_translate = '本文主要由三个部分组成：导生制、见习生制、导生制和见习生制的历史作用。',
        # sentence_to_translate = '昨天有人去超市买了一瓶啤酒',
        # sentence_to_translate = '拼尽全力也无法战胜',
-       # sentence_to_translate = '你好',
+       # sentence_to_translate = '你们可能不知道只用20万赢到578万是什么概念，我们一般只会用两个字来形容这种人:赌怪！'
+        sentence_to_translate ='TGA偶遇小机器人，年度最佳强如怪物，拼接全力无法战胜'
        # sentence_to_translate = '周六天气很热',
        # sentence_to_translate = '苹果的原始种群主要起源于中亚的天山山脉附近，尤其是现代哈萨克斯坦的阿拉木图地区',
 ):
@@ -86,7 +87,7 @@ def inference(
     # Convert list to a space-separated string
     translated_sentence_str = ' '.join(translated_sentence)
     # Remove the <unk> tokens
-    translated_sentence_str = translated_sentence_str.replace('<unk>', '').strip()
+    # translated_sentence_str = translated_sentence_str.replace('<unk>', '').strip()
     # Remove spaces before punctuation (e.g., " ,", " .", etc.)
     translated_sentence_str = re.sub(r'\s([?.!,¿])', r'\1', translated_sentence_str)
     print(f'Translated sentence: {translated_sentence_str}')

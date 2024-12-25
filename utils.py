@@ -57,7 +57,7 @@ def translate_sentence(model, sentence, chinese_vocab, english_vocab, device, ma
         src_input = sentence_tensor.transpose(0,1)[:,1:-1]
         # print(src_input)
         # 创建推理对象
-        inference_model = TransformerInference(model.to(device), max_len=50, device=device)
+        inference_model = TransformerInference(model.to(device), max_len=500, device=device)
         tgt_start_token = english_vocab.get_stoi()["<sos>"]
         eos_token = english_vocab.get_stoi()["<eos>"]
         # print("eos_token:", eos_token)
