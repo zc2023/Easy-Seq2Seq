@@ -18,7 +18,8 @@ python -m spacy download zh_core_web_sm
 ## Main requirements
 - torch==2.0.0
 - torchtext==0.15.1
-- spacy==3.6.1
+- spacy==3.6.1  
+
 Full list of dependencies is available in `requirements.txt`.
 
 ## Dataset

@@ -23,3 +23,5 @@ save_vocab_with_index_to_txt(english_vocab, english_vocab_path)
 save_vocab_with_index_to_txt(chinese_vocab, chinese_vocab_path)
 
 print(f"Vocabulary with indices has been saved to: {english_vocab_path} and {chinese_vocab_path}")
+
+# tensorboard --logdir /data/czhang/projects/Easy-Seq2Seq/runs --port=6007

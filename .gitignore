@@ -3,3 +3,4 @@ __pycache__/
 runs/
 translation2019zh/
 weights/
+show_vocab.py 
