@@ -83,11 +83,11 @@ def train(num_epochs=50,
                             tgt_vocab_size=input_size_decoder,
                             d_model=512, 
                             num_heads=8, 
-                            # num_encoder_layers=2,  
-                            # num_decoder_layers=2, 
+                            num_encoder_layers=2,  
+                            num_decoder_layers=2, 
                             # for train dataset is 6
-                            num_encoder_layers=3,  
-                            num_decoder_layers=3, 
+                            # num_encoder_layers=6,  
+                            # num_decoder_layers=6, 
                             d_ff=2048, 
                             dropout=0,
                             ).to(device)
@@ -97,30 +97,8 @@ def train(num_epochs=50,
 
     model.apply(init_weights)
     print(f"The model has {count_parameters(model):,} trainable parameters")
-    if model_name == "Transformer":
-        # 假设你的模型是 model，设置学习率
-        learning_rate = 1e-4
-        warmup_steps = 4000  # 论文中设置的预热步数
 
-        # 定义 Adam 优化器
-        optimizer = optim.Adam(
-            model.parameters(),
-            lr=learning_rate,
-            betas=(0.9, 0.98),   # Adam 的 beta 参数
-            eps=1e-9,            # epsilon 防止除零错误
-            weight_decay=0.01    # 权重衰减
-        )
-
-        # 定义学习率调度函数
-        def lr_lambda(step):
-            if step < warmup_steps:
-                return float(step) / float(max(1, warmup_steps))  # 预热阶段
-            return float(max(1, step)) ** (-0.5)  # 学习率衰减阶段
-
-        # 创建学习率调度器
-        scheduler = LambdaLR(optimizer, lr_lambda)  
-    else:
-        optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
     pad_idx = english.vocab.get_stoi()['<pad>']
     # print("pad_idx",pad_idx)
@@ -184,13 +162,15 @@ def train(num_epochs=50,
                 # Backward pass
                 loss.backward()
                 # Gradient clipping to prevent explosion
-                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
+                # torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
                 # Optimizer step
                 optimizer.step()
 
                 # Log batch loss
                 writer.add_scalar('batch Loss', loss.item(), global_step=step)
                 step += 1
+                if step%100 == 0:
+                    print(f"step:{step},loss:", loss.item())
                 # Update progress bar
                 loop.set_description(f'Epoch [{epoch+1}/{num_epochs}]')
 
@@ -238,8 +218,7 @@ def train(num_epochs=50,
 
                 # Update progress bar
                 loop.set_description(f'Epoch [{epoch+1}/{num_epochs}]')
-        if model_name == "Transformer":
-            scheduler.step()
+
         # Log epoch loss
         writer.add_scalar('epoch Loss', epoch_loss, epoch)
         print(f"Epoch [{epoch+1}/{num_epochs}] Total loss: {epoch_loss}")
@@ -315,7 +294,7 @@ if __name__=="__main__":
     #         )
     
     train(num_epochs=10,
-            learning_rate = 1e-4, # 0.001
+            learning_rate = 5e-4, # 0.001
             batch_size = 128,
             load_model_ckpt ='',
             save_model_ckpt_name = 'transformer_train_10epoch.pth.tar',
