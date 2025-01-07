@@ -19,7 +19,9 @@ def inference(
        # sentence_to_translate = '美国缓慢地开始倾听，但并非没有艰难曲折。',
        # sentence_to_translate = 'Transformer is sequence to sequence model.',
        # sentence_to_translate = '你知道的，我会永远爱着你。',
-       sentence_to_translate = "You know, I'll always love you.",
+       # sentence_to_translate = "You know, I'll always love you.",
+       sentence_to_translate = "She just gaped at me when I told her the news.",
+       
        # sentence_to_translate = '本文主要由三个部分组成：导生制、见习生制、导生制和见习生制的历史作用。',
        # sentence_to_translate = '昨天有人去超市买了一瓶啤酒',
        # sentence_to_translate = '拼尽全力也无法战胜',
@@ -97,9 +99,12 @@ def inference(
     print(f'Predicted tokens: {trans}')
     # Remove <sos> and <eos> from the translated sentence
     translated_sentence = trans[1:-1]  # Removing <sos> and <eos>
-
     # Convert list to a space-separated string
-    translated_sentence_str = ' '.join(translated_sentence)
+    
+    if task == "en2zh":
+        translated_sentence_str = ''.join(translated_sentence)
+    else:
+        translated_sentence_str = ' '.join(translated_sentence)
     # Remove the <unk> tokens
     # translated_sentence_str = translated_sentence_str.replace('<unk>', '').strip()
     # Remove spaces before punctuation (e.g., " ,", " .", etc.)
