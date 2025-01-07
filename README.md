@@ -1,5 +1,8 @@
 # Easy-Seq2Seq
 This repository provides an easy-to-deploy Seq2Seq model for NLP beginners using the latest (2024) PyTorch version. It includes implementations for both traditional Seq2Seq models and more advanced architectures like Transformer and RNN+Attention for English-Chinese translation.
+####  Update
+- [x] 2025/1/7 Release the training and inference code and model weights of Transformer English to Chinese model.
+
 
 ## Getting Started
 1. Install Anaconda
