@@ -1,51 +1,3 @@
-# # from torchtext.data import Field, BucketIterator, TabularDataset # for torchtext 0.8
-# from torchtext.data import Field, BucketIterator, TabularDataset
-# import numpy as np
-# import spacy
-# from utils import save_vocab
-
-# #Define tokenizer
-# spacy_ch= spacy.load("zh_core_web_sm")
-# spacy_eng= spacy.load("en_core_web_sm")
-
-# def tokenize_ch(text):
-#     return [tok.text for tok in spacy_ch.tokenizer(text)]
-# def tokenize_eng(text):
-#     return [tok.text for tok in spacy_eng.tokenizer(text)]
-
-# def get_loader(batch_size, save_vocabulary=False):
-#     english = Field(sequential=True, use_vocab=True, tokenize=tokenize_eng, lower=True,init_token='<sos>',eos_token='<eos>')
-#     chinese = Field(sequential=True, use_vocab=True, tokenize=tokenize_ch,lower=True,init_token='<sos>',eos_token='<eos>')
-
-#     fields = {"english":("eng", english), "chinese":("ch", chinese)}
-
-#     train_data, test_data = TabularDataset.splits(
-#         path="translation2019zh/",
-#         train="translation2019zh_valid.json",
-#         test="translation2019zh_valid.json",
-#         format="json",
-#         fields=fields
-#     )
-
-#     english.build_vocab(train_data, max_size=30000, min_freq=2)
-#     chinese.build_vocab(train_data, max_size=30000, min_freq=2)
-    
-#     if save_vocabulary:
-#         save_vocab(english.vocab.stoi, 'saved_vocab/english_stoi.txt')
-#         save_vocab(english.vocab.itos, 'saved_vocab/english_itos.txt')
-#         save_vocab(chinese.vocab.stoi, 'saved_vocab/chinese_stoi.txt')
-#         save_vocab(chinese.vocab.itos, 'saved_vocab/chinese_itos.txt')
-
-#     train_iterator,_ = BucketIterator.splits(
-#         (train_data,test_data),
-#         batch_size=batch_size,
-#         device="cuda",
-#         sort_within_batch= True,   #按照句子的长短来构成batch，减小padding的计算量
-#         sort_key = lambda x :len(x.ch)
-#     )
-#     return train_iterator, english, chinese
-
-
 import torch
 import torchtext
 from torchtext.data.utils import get_tokenizer
@@ -102,6 +54,9 @@ class TranslationDataset(torch.utils.data.Dataset):
         }
 # Create a custom dataset
 class TransformerTranslationDataset(torch.utils.data.Dataset):
+    '''
+    ch2en 
+    '''
     def __init__(self, file_path, tokenizer_ch, tokenizer_eng):
         # Load JSON data here (you might want to use pandas or json)
         # For simplicity, assume data is loaded into a list of dictionaries
@@ -130,11 +85,46 @@ class TransformerTranslationDataset(torch.utils.data.Dataset):
             'dec_input_english': dec_input_eng_tokens,
             'target_english': target_eng_tokens,
         }
+    
+class TransformerEn2ZhDataset(torch.utils.data.Dataset):
+    '''
+    english to chinese
+    '''
+    def __init__(self, file_path, tokenizer_ch, tokenizer_eng):
+        # Load JSON data here (you might want to use pandas or json)
+        # For simplicity, assume data is loaded into a list of dictionaries
+        # Example format: [{"english": "I am learning.", "chinese": "我在学习。"}, ...]
+        self.data = self.load_data(file_path)
+        self.tokenizer_ch = tokenizer_ch # 分词器
+        self.tokenizer_eng = tokenizer_eng
 
-def get_loader(dataset_path, vocab_path, batch_size, model_name="Seq2Seq"):
+    def load_data(self, file_path):
+        import json
+        with open(file_path, 'r') as f:
+            return json.load(f)
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        eng_text = self.data[idx]['english']
+        ch_text = self.data[idx]['chinese']
+        # 在句子的开头和末尾分别添加<sos>和<eos>标记
+        decoder_input_zh_tokens = ['<sos>'] + self.tokenizer_ch(ch_text) 
+        target_zh_tokens = self.tokenizer_ch(ch_text) + ['<eos>']
+        en_tokens = self.tokenizer_eng(eng_text)
+        return {
+            'english': en_tokens,
+            'decoder_input_chinese': decoder_input_zh_tokens,
+            'target_chinese': target_zh_tokens,
+        }
+
+def get_loader(dataset_path, vocab_path, batch_size, model_name="Seq2Seq", task="zh2en"):
     # construct dataset
-    if model_name == "Transformer":
+    if model_name == "Transformer" and task == "zh2en":
         train_data = TransformerTranslationDataset(dataset_path, tokenize_ch, tokenize_eng)
+    elif model_name == "Transformer" and task == "en2zh":
+        train_data = TransformerEn2ZhDataset(dataset_path, tokenize_ch, tokenize_eng)
     else:
         train_data = TranslationDataset(dataset_path, tokenize_ch, tokenize_eng)
      
@@ -190,7 +180,7 @@ def get_loader(dataset_path, vocab_path, batch_size, model_name="Seq2Seq"):
         print(f"Vocabulary loaded from {project_root}/{vocab_path} successfully!")
        
 
-    if model_name == "Transformer":
+    if model_name == "Transformer" and task == "zh2en":
         # DataLoader
         def collate_fn(batch):
             # 获取批次中的英文和中文数据
@@ -202,7 +192,20 @@ def get_loader(dataset_path, vocab_path, batch_size, model_name="Seq2Seq"):
                     'target_english': target_english_batch,
                     }  # Returning as dictionary
         # Convert to DataLoader
-        train_loader = DataLoader(train_data, batch_size=batch_size, collate_fn=collate_fn)      
+        train_loader = DataLoader(train_data, batch_size=batch_size, collate_fn=collate_fn)  
+    elif model_name == "Transformer" and task == "en2zh":
+        # DataLoader
+        def collate_fn(batch):
+            # 获取批次中的英文和中文数据
+            english_batch = [item['english'] for item in batch]
+            decoder_input_chinese_batch = [item['decoder_input_chinese'] for item in batch]
+            target_chinese_batch  = [item['target_chinese'] for item in batch]
+            return {'english': english_batch, 
+                    'decoder_input_chinese': decoder_input_chinese_batch,
+                    'target_chinese': target_chinese_batch,
+                    }  # Returning as dictionary
+        # Convert to DataLoader
+        train_loader = DataLoader(train_data, batch_size=batch_size, collate_fn=collate_fn)          
     else:
         # DataLoader
         def collate_fn(batch):

@@ -9,19 +9,22 @@ from transformerv2 import Transformer
 def inference(
        english_vocab_path = "vocab30k/english_vocab.pt",
        chinese_vocab_path = "vocab30k/chinese_vocab.pt",
-       model_ckpt_path = "weights/transformer_train_10epoch.pth.tar", 
+       model_ckpt_path = "weights/transformer_train_10epoch_en2zh.pth.tar", 
        # seq2seqAtt_valid_100epoch.pth.tar,valid_150epoch.pth.tar
        # seq2seq_train_28epoch.pth.tar
        # transformer_valid_100epoch.pth.tar
-       device = "cuda:0",
+       device = "cuda:1",
        model_name = "Transformer", # Seq2Seq # Seq2SeqAttention # Transformer
+       task = "en2zh",
        # sentence_to_translate = '美国缓慢地开始倾听，但并非没有艰难曲折。',
+       # sentence_to_translate = 'Transformer is sequence to sequence model.',
        # sentence_to_translate = '你知道的，我会永远爱着你。',
+       sentence_to_translate = "You know, I'll always love you.",
        # sentence_to_translate = '本文主要由三个部分组成：导生制、见习生制、导生制和见习生制的历史作用。',
        # sentence_to_translate = '昨天有人去超市买了一瓶啤酒',
        # sentence_to_translate = '拼尽全力也无法战胜',
        # sentence_to_translate = '你们可能不知道只用20万赢到578万是什么概念，我们一般只会用两个字来形容这种人:赌怪！'
-        sentence_to_translate ='TGA偶遇小机器人，年度最佳强如怪物，拼接全力无法战胜'
+       # sentence_to_translate ='TGA偶遇小机器人，年度最佳强如怪物，拼接全力无法战胜'
        # sentence_to_translate = '周六天气很热',
        # sentence_to_translate = '苹果的原始种群主要起源于中亚的天山山脉附近，尤其是现代哈萨克斯坦的阿拉木图地区',
 ):
@@ -59,15 +62,26 @@ def inference(
         model = AttSeq2Seq(enc, dec, device).to(device)
         print("Use AttSeq2Seq model!")
     elif model_name == "Transformer":
-        model = Transformer(src_vocab_size=input_size_encoder, 
-                            tgt_vocab_size=input_size_decoder,
-                            d_model=512, 
-                            num_heads=8, 
-                            num_encoder_layers=2, 
-                            num_decoder_layers=2, 
-                            d_ff=2048, 
-                            dropout=0,
-                            ).to(device)
+        if task == "zh2en":
+            model = Transformer(src_vocab_size=input_size_encoder, 
+                                tgt_vocab_size=input_size_decoder,
+                                d_model=512, 
+                                num_heads=8, 
+                                num_encoder_layers=2,  
+                                num_decoder_layers=2, 
+                                d_ff=2048, 
+                                dropout=0,
+                                ).to(device)
+        elif task == "en2zh":
+            model = Transformer(src_vocab_size=len(english_vocab.vocab), 
+                                tgt_vocab_size=len(chinese_vocab.vocab),
+                                d_model=512, 
+                                num_heads=8, 
+                                num_encoder_layers=2,  
+                                num_decoder_layers=2, 
+                                d_ff=2048, 
+                                dropout=0,
+                                ).to(device)
         print("Use Transformer model!")       
     else:
         print("Not a valid model name!")
@@ -79,7 +93,7 @@ def inference(
     #test sentence
     sentence = sentence_to_translate
     print(sentence)
-    trans = translate_sentence(model, sentence, chinese_vocab, english_vocab, device, max_length=50, model_name=model_name)
+    trans = translate_sentence(model, sentence, chinese_vocab, english_vocab, device, max_length=50, model_name=model_name, task=task)
     print(f'Predicted tokens: {trans}')
     # Remove <sos> and <eos> from the translated sentence
     translated_sentence = trans[1:-1]  # Removing <sos> and <eos>

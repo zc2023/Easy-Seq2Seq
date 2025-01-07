@@ -8,76 +8,117 @@ from torchtext.vocab import Vocab
 from transformerv2 import Transformer, TransformerInference
 
 
-def translate_sentence(model, sentence, chinese_vocab, english_vocab, device, max_length=50, model_name ="Seq2Seq"):
-    # Load chinese tokenizer
-    spacy_ch = spacy.load("zh_core_web_sm")
+def translate_sentence(model, sentence, chinese_vocab, english_vocab, device, max_length=50, model_name ="Seq2Seq", task="zh2en"):
+    if task == "zh2en":
+        # Load chinese tokenizer
+        spacy_ch = spacy.load("zh_core_web_sm")
 
-    # Tokenize sentence
-    if isinstance(sentence, str):
-        tokens = [token.text.lower() for token in spacy_ch(sentence)]
-    else:
-        tokens = [token.lower() for token in sentence]
+        # Tokenize sentence
+        if isinstance(sentence, str):
+            tokens = [token.text.lower() for token in spacy_ch(sentence)]
+        else:
+            tokens = [token.lower() for token in sentence]
 
-    # Add <SOS> and <EOS> in beginning and end respectively
-    tokens.insert(0, '<sos>')
-    tokens.append('<eos>')
-    # print(tokens)
-    # Convert tokens to indices using the Chinese vocabulary
-    text_to_indices = [chinese_vocab.get_stoi().get(token, chinese_vocab.get_stoi()['<unk>']) for token in tokens]
+        # Add <SOS> and <EOS> in beginning and end respectively
+        tokens.insert(0, '<sos>')
+        tokens.append('<eos>')
+        # print(tokens)
+        # Convert tokens to indices using the Chinese vocabulary
+        text_to_indices = [chinese_vocab.get_stoi().get(token, chinese_vocab.get_stoi()['<unk>']) for token in tokens]
 
-    # Convert to Tensor and move to device
-    sentence_tensor = torch.LongTensor(text_to_indices).unsqueeze(1).to(device)
-    # print(sentence_tensor.shape)
-    # Initialize the output with the <sos> token
-    inputs  = [english_vocab.get_stoi()["<sos>"]]
+        # Convert to Tensor and move to device
+        sentence_tensor = torch.LongTensor(text_to_indices).unsqueeze(1).to(device)
+        # print(sentence_tensor.shape)
+        # Initialize the output with the <sos> token
+        inputs  = [english_vocab.get_stoi()["<sos>"]]
 
-    if model_name == "Seq2Seq":
-        hidden, cell = model.encoder(sentence_tensor)
-        for _ in range(max_length):
-            inputs_tensor = torch.LongTensor([inputs[-1]]).to(device)
-            output, hidden, cell = model.decoder(inputs_tensor, hidden, cell)
-            predicted_token = output.argmax(-1).item()
-            inputs.append(predicted_token)
-            if predicted_token == english_vocab.get_stoi()["<eos>"]:
-                break
-    elif model_name == "Seq2SeqAttention":
-        encoder_outputs, hidden = model.encoder(sentence_tensor)
-        for _ in range(max_length):
-            inputs_tensor = torch.LongTensor([inputs[-1]]).to(device)
-            output, hidden = model.decoder(inputs_tensor, hidden, encoder_outputs)
-            predicted_token = output.argmax(-1).item()
-            inputs.append(predicted_token)
-            if predicted_token == english_vocab.get_stoi()["<eos>"]:
-                break    
-    elif model_name == "Transformer":
+        if model_name == "Seq2Seq":
+            hidden, cell = model.encoder(sentence_tensor)
+            for _ in range(max_length):
+                inputs_tensor = torch.LongTensor([inputs[-1]]).to(device)
+                output, hidden, cell = model.decoder(inputs_tensor, hidden, cell)
+                predicted_token = output.argmax(-1).item()
+                inputs.append(predicted_token)
+                if predicted_token == english_vocab.get_stoi()["<eos>"]:
+                    break
+        elif model_name == "Seq2SeqAttention":
+            encoder_outputs, hidden = model.encoder(sentence_tensor)
+            for _ in range(max_length):
+                inputs_tensor = torch.LongTensor([inputs[-1]]).to(device)
+                output, hidden = model.decoder(inputs_tensor, hidden, encoder_outputs)
+                predicted_token = output.argmax(-1).item()
+                inputs.append(predicted_token)
+                if predicted_token == english_vocab.get_stoi()["<eos>"]:
+                    break    
+        elif model_name == "Transformer":
+            print("Use Transformer inference pipeline!")
+            # # tgt_input = torch.LongTensor([english_vocab.get_stoi()["<sos>"]]).unsqueeze(0).to(device)  # shape [1, 1]
+            # # Prepare empty tensor for storing generated tokens
+            # generated_tokens = []
+            src_input = sentence_tensor.transpose(0,1)[:,1:-1]
+            # print(src_input)
+            # 创建推理对象
+            inference_model = TransformerInference(model.to(device), max_len=500, device=device)
+            tgt_start_token = english_vocab.get_stoi()["<sos>"]
+            eos_token = english_vocab.get_stoi()["<eos>"]
+            # print("eos_token:", eos_token)
+            pad_token = english_vocab.get_stoi()["<pad>"]
+            # 进行推理
+            generated_tokens = inference_model.infer(src_input, tgt_start_token, eos_token, pad_token)
+            # print("Generated Tokens:", generated_tokens)
+            # 假设 generated_tokens 是一个形状为 [1, seq_len] 的张量
+            generated_tokens = generated_tokens.squeeze(0)  # 以确保是 1D 张量 [seq_len]
+
+            # 将张量转换为 Python 列表并通过 get_itos() 映射每个 token ID
+            translated_sentence = [english_vocab.get_itos()[idx.item()] for idx in generated_tokens]
+
+            # print("Generated Tokens:", generated_tokens)
+            return translated_sentence
+        else:
+            print("Not a valid model name!")
+        # index to word
+        translated_sentence = [english_vocab.get_itos()[idx] for idx in inputs]
+
+    elif task == "en2zh" and model_name == "Transformer":
         print("Use Transformer inference pipeline!")
+        # Load chinese tokenizer
+        spacy_eng = spacy.load("en_core_web_sm")
+
+        # Tokenize sentence
+        if isinstance(sentence, str):
+            tokens = [token.text.lower() for token in spacy_eng(sentence)]
+        else:
+            tokens = [token.lower() for token in sentence]
+
+        # Add <SOS> and <EOS> in beginning and end respectively
+        # print(tokens)
+        # Convert tokens to indices using the Chinese vocabulary
+        text_to_indices = [english_vocab.get_stoi().get(token, english_vocab.get_stoi()['<unk>']) for token in tokens]
+
+        # Convert to Tensor and move to device
+        sentence_tensor = torch.LongTensor(text_to_indices).unsqueeze(1).to(device)  
         # # tgt_input = torch.LongTensor([english_vocab.get_stoi()["<sos>"]]).unsqueeze(0).to(device)  # shape [1, 1]
         # # Prepare empty tensor for storing generated tokens
         # generated_tokens = []
-        src_input = sentence_tensor.transpose(0,1)[:,1:-1]
+        src_input = sentence_tensor.transpose(0,1)
         # print(src_input)
         # 创建推理对象
         inference_model = TransformerInference(model.to(device), max_len=500, device=device)
-        tgt_start_token = english_vocab.get_stoi()["<sos>"]
-        eos_token = english_vocab.get_stoi()["<eos>"]
+        tgt_start_token = chinese_vocab.get_stoi()["<sos>"]
+        eos_token = chinese_vocab.get_stoi()["<eos>"]
         # print("eos_token:", eos_token)
-        pad_token = english_vocab.get_stoi()["<pad>"]
+        pad_token = chinese_vocab.get_stoi()["<pad>"]
         # 进行推理
         generated_tokens = inference_model.infer(src_input, tgt_start_token, eos_token, pad_token)
         # print("Generated Tokens:", generated_tokens)
         # 假设 generated_tokens 是一个形状为 [1, seq_len] 的张量
         generated_tokens = generated_tokens.squeeze(0)  # 以确保是 1D 张量 [seq_len]
-
         # 将张量转换为 Python 列表并通过 get_itos() 映射每个 token ID
-        translated_sentence = [english_vocab.get_itos()[idx.item()] for idx in generated_tokens]
-
+        translated_sentence = [chinese_vocab.get_itos()[idx.item()] for idx in generated_tokens]
         # print("Generated Tokens:", generated_tokens)
         return translated_sentence
     else:
-        print("Not a valid model name!")
-    
-    # index to word
-    translated_sentence = [english_vocab.get_itos()[idx] for idx in inputs]
+        print("Not implemented yet.")
 
     return translated_sentence
 

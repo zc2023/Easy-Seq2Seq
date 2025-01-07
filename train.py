@@ -29,6 +29,7 @@ def train(num_epochs=50,
           save_model_ckpt_name = 'checkpoint_train_dataset.pth.tar',
           device = 'cuda:0',
           model_name = "Seq2Seq",
+          task = "zh2en", # zh2en 中文翻译成英文 
           test_sentence = "你知道的，我会永远爱着你。",
           dataset_path = "/data/czhang/projects/datasets/en2cn/translation2019zh_train_fixed.json",
           vocab_path = "vocab30k_train",
@@ -38,7 +39,7 @@ def train(num_epochs=50,
           ):
 
     # Get trainloader and vocab
-    train_loader, english, chinese = get_loader(dataset_path, vocab_path, batch_size, model_name)
+    train_loader, english, chinese = get_loader(dataset_path, vocab_path, batch_size, model_name, task)
 
     # Model hyperparameters
     input_size_encoder = len(chinese.vocab)
@@ -79,18 +80,26 @@ def train(num_epochs=50,
         model = AttSeq2Seq(enc, dec, device).to(device)
         print("Use AttSeq2Seq model!")
     elif model_name == "Transformer":
-        model = Transformer(src_vocab_size=input_size_encoder, 
-                            tgt_vocab_size=input_size_decoder,
-                            d_model=512, 
-                            num_heads=8, 
-                            num_encoder_layers=2,  
-                            num_decoder_layers=2, 
-                            # for train dataset is 6
-                            # num_encoder_layers=6,  
-                            # num_decoder_layers=6, 
-                            d_ff=2048, 
-                            dropout=0,
-                            ).to(device)
+        if task == "zh2en":
+            model = Transformer(src_vocab_size=input_size_encoder, 
+                                tgt_vocab_size=input_size_decoder,
+                                d_model=512, 
+                                num_heads=8, 
+                                num_encoder_layers=2,  
+                                num_decoder_layers=2, 
+                                d_ff=2048, 
+                                dropout=0,
+                                ).to(device)
+        elif task == "en2zh":
+            model = Transformer(src_vocab_size=len(english.vocab), 
+                                tgt_vocab_size=len(chinese.vocab),
+                                d_model=512, 
+                                num_heads=8, 
+                                num_encoder_layers=2,  
+                                num_decoder_layers=2, 
+                                d_ff=2048, 
+                                dropout=0,
+                                ).to(device)
         print("Use Transformer model!")
     else:
         print("Not a valid model name!")
@@ -117,7 +126,7 @@ def train(num_epochs=50,
         if (epoch+1)%epoch_per_eval == 0:
             print(f'Eval on example sentence: {sentence}')
             model.eval()
-            translate = translate_sentence(model, sentence, chinese, english, device, max_length=50, model_name=model_name)
+            translate = translate_sentence(model, sentence, chinese, english, device, max_length=50, model_name=model_name, task=task)
             print(f'Translated example sentence: {translate}')
 
         model.train()
@@ -129,27 +138,42 @@ def train(num_epochs=50,
         for batch_idx, batch in loop:
             # print("chinese_batch", chinese_batch[:3])
             if model_name == 'Transformer':
-                # Accessing batch as a dictionary (since __getitem__ returns a dictionary)
+                if task == "zh2en":
+                    chinese_batch = batch['chinese']  # List of  Chinese sentences
+                    dec_input_english_batch = batch['dec_input_english']  # List of  English sentences
+                    target_english_batch = batch['target_english']  # List of  English sentences
+                    # Use vocab to convert tokens into indices
+                    encoder_input = [torch.tensor([chinese.vocab[token] for token in sentence]).to(device) for sentence in chinese_batch] # list, 每个元素是一个不定长度的tensor
+                    decoder_input = [torch.tensor([english.vocab[token] for token in sentence]).to(device) for sentence in dec_input_english_batch]
+                    target = [torch.tensor([english.vocab[token] for token in sentence]).to(device) for sentence in target_english_batch]
+                    # Pad the input sequences (to make them equal in length)
+                    # batch last
+                    # [input_sentence_idx_max_len, batchsize]
+                    encoder_input = torch.nn.utils.rnn.pad_sequence(encoder_input, padding_value=chinese.vocab['<pad>'], batch_first=True)
+                    # [output_sentence_idx_max_len, batchsize]
+                    decoder_input = torch.nn.utils.rnn.pad_sequence(decoder_input, padding_value=english.vocab['<pad>'], batch_first=True)
+                    target = torch.nn.utils.rnn.pad_sequence(target, padding_value=english.vocab['<pad>'], batch_first=True)
+                elif task == "en2zh":
+                    english_batch = batch['english']  # List of  Chinese sentences
+                    decoder_input_chinese_batch = batch['decoder_input_chinese']  # List of  English sentences
+                    target_chinese_batch = batch['target_chinese']  # List of  English sentences
+                    # Use vocab to convert tokens into indices
+                    encoder_input = [torch.tensor([english.vocab[token] for token in sentence]).to(device) for sentence in english_batch] # list, 每个元素是一个不定长度的tensor
+                    decoder_input = [torch.tensor([chinese.vocab[token] for token in sentence]).to(device) for sentence in decoder_input_chinese_batch]
+                    target = [torch.tensor([chinese.vocab[token] for token in sentence]).to(device) for sentence in target_chinese_batch]
+                    # Pad the input sequences (to make them equal in length)
+                    # batch last
+                    # [input_sentence_idx_max_len, batchsize]
+                    encoder_input = torch.nn.utils.rnn.pad_sequence(encoder_input, padding_value=english.vocab['<pad>'], batch_first=True)
+                    # [output_sentence_idx_max_len, batchsize]
+                    decoder_input = torch.nn.utils.rnn.pad_sequence(decoder_input, padding_value=chinese.vocab['<pad>'], batch_first=True)
+                    target = torch.nn.utils.rnn.pad_sequence(target, padding_value=chinese.vocab['<pad>'], batch_first=True)                   
                 
-                chinese_batch = batch['chinese']  # List of  Chinese sentences
-                dec_input_english_batch = batch['dec_input_english']  # List of  English sentences
-                target_english_batch = batch['target_english']  # List of  English sentences
-                # Use vocab to convert tokens into indices
-                enc_input = [torch.tensor([chinese.vocab[token] for token in sentence]).to(device) for sentence in chinese_batch] # list, 每个元素是一个不定长度的tensor
-                dec_input = [torch.tensor([english.vocab[token] for token in sentence]).to(device) for sentence in dec_input_english_batch]
-                target = [torch.tensor([english.vocab[token] for token in sentence]).to(device) for sentence in target_english_batch]
-                # Pad the input sequences (to make them equal in length)
-                # batch last
-                # [input_sentence_idx_max_len, batchsize]
-                enc_input = torch.nn.utils.rnn.pad_sequence(enc_input, padding_value=chinese.vocab['<pad>'], batch_first=True)
-                # [output_sentence_idx_max_len, batchsize]
-                dec_input = torch.nn.utils.rnn.pad_sequence(dec_input, padding_value=english.vocab['<pad>'], batch_first=True)
-                target = torch.nn.utils.rnn.pad_sequence(target, padding_value=english.vocab['<pad>'], batch_first=True)
                 # Forward pass
                 optimizer.zero_grad()
                 # enc_input = [batch_size, src_len] , src_len 是 vocab_indexes
                 # dec_input = [batch_size, tgt_len] 
-                outputs, enc_self_attns, dec_self_attns, dec_enc_attns = model(enc_input, dec_input)  
+                outputs, enc_self_attns, dec_self_attns, dec_enc_attns = model(encoder_input, decoder_input)  
                 
                 # Output shape: [batch_size， tgt_len， tgt_vocab_size]
                 outputs = outputs.view(-1, outputs.size(-1)) # [batch_size*tgt_len， tgt_vocab_size]
@@ -175,6 +199,7 @@ def train(num_epochs=50,
                 loop.set_description(f'Epoch [{epoch+1}/{num_epochs}]')
 
             else:
+                # RNN的模型训练方式
                 # Accessing batch as a dictionary (since __getitem__ returns a dictionary)
                 english_batch = batch['english']  # List of  English sentences
                 chinese_batch = batch['chinese']  # List of  Chinese sentences
@@ -293,17 +318,34 @@ if __name__=="__main__":
     #         epoch_per_save = 50,
     #         )
     
+    # train(num_epochs=10,
+    #         learning_rate = 5e-4, # 0.001
+    #         batch_size = 128,
+    #         load_model_ckpt ='',
+    #         save_model_ckpt_name = 'transformer_train_10epoch.pth.tar',
+    #         device = 'cuda:1',
+    #         model_name = "Transformer",
+    #         task = "zh2en", # zh2en 中文翻译成英文 
+    #         test_sentence = "你知道的，我会永远爱着你。",
+    #         dataset_path = "/data/czhang/projects/datasets/en2cn/translation2019zh_train_fixed.json",
+    #         vocab_path = "vocab30k",
+    #         run_name = 'transformer_10epoch_train',
+    #         epoch_per_eval = 10,
+    #         epoch_per_save = 1,
+    #         )
+    
     train(num_epochs=10,
             learning_rate = 5e-4, # 0.001
             batch_size = 128,
             load_model_ckpt ='',
-            save_model_ckpt_name = 'transformer_train_10epoch.pth.tar',
+            save_model_ckpt_name = 'transformer_train_10epoch_en2zh.pth.tar',
             device = 'cuda:1',
             model_name = "Transformer",
-            test_sentence = "你知道的，我会永远爱着你。",
+            task = "en2zh", # zh2en 中文翻译成英文 
+            test_sentence = "You know, I'll always love you.", # en2zh
             dataset_path = "/data/czhang/projects/datasets/en2cn/translation2019zh_train_fixed.json",
             vocab_path = "vocab30k",
-            run_name = 'transformer_10epoch_train',
-            epoch_per_eval = 10,
+            run_name = 'transformer_10epoch_train_en2zh',
+            epoch_per_eval = 11,
             epoch_per_save = 1,
             )
